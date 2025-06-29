@@ -210,7 +210,7 @@
             let lat = +potential_fire.latitide;
             let lng = +potential_fire.longitude;
             // map.setView({ lat, lng }, 8);
-            marker = new L.Marker({ lat, lng }, { icon: markers. });
+            marker = new L.Marker({ lat, lng }, { icon: markers.icon });
 
             // add a tooltip with just the latitude and longitude for now
             marker.bindTooltip(potential_fire.latitide + potential_fire.longitude);
