@@ -36,7 +36,7 @@
     <div class="centered m-15">
         <button
             class="button button--variant-orange"
-            class:button--loading={loader}
+            class:button--loading={nasa_loader}
             on:click={getNasaApi}
         >
             NASA API Call
@@ -66,8 +66,12 @@
 
     const { title } = config;
 
+    // list of markers
+    let cur_markers: L.CircleMarker[] = [];
+
     let marker: L.Marker | null = null;
     let loader = false;
+    let nasa_loader = false;
 
     const getMyLoc = async () => {
         loader = true;
@@ -80,11 +84,13 @@
         }
     };
 
+    // NOTE: the confidence rating appears to be a number but CSV data reports it as high/low
     enum ConfidenceRating {
         High,
         Low,
     }
 
+    // whether the reading was from day or night
     enum DayNight {
         Day,
         Night,
@@ -124,12 +130,16 @@
     const potential_fire_location_num_values = 14; // probably a better way to do this
 
     const getNasaApi = async () => {
-        let uri: string =
-            '';
+        nasa_loader = true; //start loading
+        // FIXME: build URI from user input
+        let uri: string = '';
 
         const response = await fetch(uri);
-        let row_delimiter = '\n';
-        let delimiter = ',';
+
+        // for handling CSV data
+        const row_delimiter = '\n';
+        const delimiter = ',';
+
         let rows_array: string[] = (await response.text()).split(row_delimiter);
         let rows: string = rows_array[0]; // why does typescript put the array inside another array??
         console.log(rows_array);
@@ -138,6 +148,9 @@
 
         let potential_fires = [];
         let num_csv_header_values = 0;
+        // let markers = {
+        //     current: L.CircleMarker[],
+        // };
 
         console.log('rows_array.length= ' + rows_array.length);
         // while we still have another delimiter
@@ -205,17 +218,32 @@
             // console.log(potential_fires);
         }
 
-        // FIXME: this is super laggy, we probably want to only display markers on screen
         for (let potential_fire of potential_fires) {
             let lat = +potential_fire.latitide;
             let lng = +potential_fire.longitude;
-            // map.setView({ lat, lng }, 8);
-            marker = new L.Marker({ lat, lng }, { icon: markers.icon });
 
-            // add a tooltip with just the latitude and longitude for now
-            marker.bindTooltip(potential_fire.latitide + potential_fire.longitude);
-            marker.addTo(map);
+            // circle markers are a lot less laggy
+            cur_markers.push(
+                L.circleMarker(
+                    { lat, lng },
+                    {
+                        radius: 5,
+                        fillColor: 'red',
+                        fillOpacity: 0.9,
+                        weight: 1,
+                    },
+                ),
+            );
+            let cur_index = cur_markers.length - 1;
+            // add a tooltip with the latitude and longitude for now
+            // TODO: add rest of data in "key=value, key=value" format
+            cur_markers[cur_index].bindTooltip(
+                potential_fire.latitide + ', ' + potential_fire.longitude,
+            );
+            cur_markers[cur_index].addTo(map);
         }
+        // we are done loading
+        nasa_loader = false;
     };
 
     onDestroy(() => {
