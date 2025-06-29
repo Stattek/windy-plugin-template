@@ -130,6 +130,9 @@
     const potential_fire_location_num_values = 14; // probably a better way to do this
 
     const getNasaApi = async () => {
+        // before we try loading, cleanup any previous markers
+        cleanupCircleMarkers();
+
         nasa_loader = true; //start loading
         // FIXME: build URI from user input
         let uri: string = '';
@@ -141,6 +144,8 @@
         const delimiter = ',';
 
         let rows_array: string[] = (await response.text()).split(row_delimiter);
+
+        // DEBUG: remove rows and the debug logs
         let rows: string = rows_array[0]; // why does typescript put the array inside another array??
         console.log(rows_array);
         console.log('rows = ' + rows_array);
@@ -148,9 +153,6 @@
 
         let potential_fires = [];
         let num_csv_header_values = 0;
-        // let markers = {
-        //     current: L.CircleMarker[],
-        // };
 
         console.log('rows_array.length= ' + rows_array.length);
         // while we still have another delimiter
@@ -246,13 +248,24 @@
         nasa_loader = false;
     };
 
+    const cleanupCircleMarkers = () => {
+        for (let cur_marker of cur_markers) {
+            if (cur_marker) {
+                cur_marker.remove();
+            }
+        }
+    };
+
     onDestroy(() => {
         // Your plugin will be destroyed
         // Make sure you cleanup after yourself
         if (marker) {
-            marker.remove();
-            marker = null;
+            {
+                marker.remove();
+                marker = null;
+            }
         }
+        cleanupCircleMarkers();
     });
 </script>
 
